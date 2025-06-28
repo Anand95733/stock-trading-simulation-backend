@@ -1,0 +1,581 @@
+openapi: 3.0.0
+info:
+  title: Stock Trading Simulation API
+  version: 1.0.0
+  description: API documentation for the Stock Trading Simulation Task
+servers:
+  - url: http://localhost:5000/api # Corrected base URL for API endpoints in Swagger UI
+    description: Local development server
+tags:
+  - name: Stocks
+    description: Stock Management and History
+  - name: Users
+    description: User Registration and Loan Management
+  - name: Trading
+    description: Stock Buy/Sell Operations
+  - name: Reports
+    description: Analytics and Reporting
+paths:
+  /api/stocks/register: # PREFIXED WITH /api
+    post:
+      summary: Register a new stock with stock, available quantity and price.
+      tags: [Stocks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - symbol
+                - name
+                - initialPrice
+                - availableQuantity
+              properties:
+                symbol:
+                  type: string
+                  example: 'GOOGL'
+                name:
+                  type: string
+                  example: 'Alphabet Inc.'
+                initialPrice:
+                  type: number
+                  format: float
+                  example: 150.50
+                availableQuantity:
+                  type: integer
+                  example: 1000
+      responses:
+        201:
+          description: Stock registered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Stock registered successfully.'
+                  stock:
+                    type: object
+                    properties:
+                      id: { type: integer, example: 1 }
+                      symbol: { type: string, example: 'GOOGL' }
+                      name: { type: string, example: 'Alphabet Inc.' }
+                      currentPrice: { type: number, example: 150.50 }
+                      availableQuantity: { type: integer, example: 1000 }
+        400:
+          description: Invalid input or missing required fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Please provide symbol, name, initialPrice, and availableQuantity.' }
+        409:
+          description: Stock symbol already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Stock with symbol 'GOOGL' already exists." }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error registering stock.' }
+
+  /api/stocks/history: # PREFIXED WITH /api
+    get:
+      summary: Retrieve stock price history for all stocks.
+      tags: [Stocks]
+      responses:
+        200:
+          description: A list of all stock price history entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, example: 1 }
+                    stockId: { type: integer, example: 1 }
+                    price: { type: number, example: 150.50 }
+                    timestamp: { type: string, format: 'date-time', example: '2025-06-28T10:00:00.000Z' }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching stock history.' }
+
+  /api/stocks/history/{symbol}: # PREFIXED WITH /api
+    get:
+      summary: Retrieve stock price history for a specific stock by symbol.
+      tags: [Stocks]
+      parameters:
+        - in: path
+          name: symbol
+          schema:
+            type: string
+          required: true
+          description: The stock symbol (e.g., AAPL, GOOGL).
+      responses:
+        200:
+          description: A list of stock price history entries for the specified stock.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, example: 2 }
+                    stockId: { type: integer, example: 1 }
+                    price: { type: number, example: 151.25 }
+                    timestamp: { type: string, format: 'date-time', example: '2025-06-28T10:05:00.000Z' }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching stock history.' }
+
+  /api/users/register: # PREFIXED WITH /api
+    post:
+      summary: Register a new user.
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: 'anand_dev'
+                password:
+                  type: string
+                  example: 'secure_password123'
+                initialBalance:
+                  type: number
+                  format: float
+                  example: 1000.00
+      responses:
+        201:
+          description: User registered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'User registered successfully.' }
+                  user:
+                    type: object
+                    properties:
+                      id: { type: integer, example: 1 }
+                      username: { type: string, example: 'anand_dev' }
+                      balance: { type: number, example: 1000.00 }
+                      loanAmount: { type: number, example: 0.00 }
+        400:
+          description: Invalid input or missing required fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Please provide username and password.' }
+        409:
+          description: Username already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "User with username 'anand_dev' already exists." }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error registering user.' }
+
+  /api/users/loan: # PREFIXED WITH /api
+    post:
+      summary: "Allow a user to take a loan if eligible (max loan amount: 100000)."
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - amount
+              properties:
+                userId:
+                  type: integer
+                  example: 1
+                amount:
+                  type: number
+                  format: float
+                  example: 50000.00
+      responses:
+        200:
+          description: Loan processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Loan of 50000 processed successfully.' }
+                  newBalance: { type: number, example: 60000.00 }
+                  newLoanAmount: { type: number, example: 50000.00 }
+        400:
+          description: Invalid input or loan limit exceeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Loan request (50000) exceeds maximum loan limit. Current loan: 0, Max allowed: 100000.' }
+        404:
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'User not found.' }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error processing loan.' }
+
+  /api/users/buy: # PREFIXED WITH /api
+    post:
+      summary: Buy stocks based on price and availability.
+      tags: [Trading]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - stockSymbol
+                - quantity
+              properties:
+                userId:
+                  type: integer
+                  example: 1
+                stockSymbol:
+                  type: string
+                  example: 'GOOGL'
+                quantity:
+                  type: integer
+                  example: 5
+      responses:
+        200:
+          description: Stock purchased successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Successfully purchased 5 GOOGL shares.' }
+                  newBalance: { type: number, example: 925.00 }
+        400:
+          description: Invalid input or insufficient funds/stock.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Insufficient funds or stock not available.' }
+        404:
+          description: User or stock not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'User or stock not found.' }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error buying stock.' }
+
+  /api/users/sell: # PREFIXED WITH /api
+    post:
+      summary: Sell owned stocks.
+      tags: [Trading]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - stockSymbol
+                - quantity
+              properties:
+                userId:
+                  type: integer
+                  example: 1
+                stockSymbol:
+                  type: string
+                  example: 'GOOGL'
+                quantity:
+                  type: integer
+                  example: 2
+      responses:
+        200:
+          description: Stock sold successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Successfully sold 2 GOOGL shares.' }
+                  newBalance: { type: number, example: 1250.00 }
+        400:
+          description: Invalid input or insufficient owned stock.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'You do not own enough of this stock to sell.' }
+        404:
+          description: User or stock not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'User or stock not found.' }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error selling stock.' }
+
+  /api/users/report/{userId}: # PREFIXED WITH /api
+    get:
+      summary: Fetch user profit/loss report.
+      tags: [Reports]
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: integer
+          required: true
+          description: The ID of the user to fetch the report for.
+      responses:
+        200:
+          description: User's financial report.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId: { type: integer, example: 1 }
+                  username: { type: string, example: 'anand_dev' }
+                  currentBalance: { type: number, example: 925.00 }
+                  currentLoanAmount: { type: number, example: 0.00 }
+                  totalProfitLoss: { type: number, example: 25.00 }
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        userId: { type: integer }
+                        stockId: { type: integer }
+                        type: { type: string, example: 'BUY' }
+                        quantity: { type: integer }
+                        pricePerShare: { type: number }
+                        totalAmount: { type: number }
+                        transactionDate: { type: string, format: 'date-time' }
+        400:
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Please provide a userId.' }
+        404:
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'User not found.' }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching user data.' }
+
+  /api/stocks/report: # PREFIXED WITH /api
+    get:
+      summary: Get stock-wise performance report for all stocks.
+      tags: [Reports]
+      responses:
+        200:
+          description: List of stock performance reports.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    symbol: { type: string, example: 'GOOGL' }
+                    name: { type: string, example: 'Alphabet Inc.' }
+                    currentPrice: { type: number, example: 152.00 }
+                    availableQuantity: { type: integer, example: 995 }
+                    totalQuantityBought: { type: integer, example: 5 }
+                    totalQuantitySold: { type: integer, example: 2 }
+                    totalValueBought: { type: number, example: 750.00 }
+                    totalValueSold: { type: number, example: 300.00 }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching stock report.' }
+
+  /api/stocks/report/{symbol}: # PREFIXED WITH /api
+    get:
+      summary: Get stock-wise performance report for a specific stock.
+      tags: [Reports]
+      parameters:
+        - in: path
+          name: symbol
+          schema:
+            type: string
+          required: true
+          description: The stock symbol (e.g., AAPL, GOOGL).
+      responses:
+        200:
+          description: Performance report for the specified stock.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  symbol: { type: string, example: 'GOOGL' }
+                  name: { type: string, example: 'Alphabet Inc.' }
+                  currentPrice: { type: number, example: 152.00 }
+                  availableQuantity: { type: integer, example: 995 }
+                  totalQuantityBought: { type: integer, example: 5 }
+                  totalQuantitySold: { type: integer, example: 2 }
+                  totalValueBought: { type: number, example: 750.00 }
+                  totalValueSold: { type: number, example: 300.00 }
+        404:
+          description: Stock not found or no transactions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Stock with symbol 'GOOGL' not found or has no transactions." }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching stock report.' }
+
+  /api/users/top: # PREFIXED WITH /api
+    get:
+      summary: List top-performing users (based on net profit/loss).
+      tags: [Reports]
+      responses:
+        200:
+          description: A list of top 10 performing users.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, example: 1 }
+                    username: { type: string, example: 'anand_dev' }
+                    netProfitLoss: { type: number, example: 25.00 }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching top users.' }
+
+  /api/stocks/top: # PREFIXED WITH /api
+    get:
+      summary: List top-performing stocks (based on total traded value).
+      tags: [Reports]
+      responses:
+        200:
+          description: A list of top 10 performing stocks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, example: 1 }
+                    symbol: { type: string, example: 'GOOGL' }
+                    name: { type: string, example: 'Alphabet Inc.' }
+                    totalTradedValue: { type: number, example: 1050.00 }
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Error fetching top stocks.' }
