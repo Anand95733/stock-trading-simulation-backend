@@ -1,5 +1,4 @@
 const { getDb } = require('../config/sqliteDB');
-const db = getDb(); // Get the connected database instance
 
 const MAX_LOAN_AMOUNT = 100000;
 
@@ -7,15 +6,22 @@ const MAX_LOAN_AMOUNT = 100000;
 // @route   POST /users/register
 // @access  Public
 const registerUser = (req, res) => {
-    const { username, password, initialBalance } = req.body; // initialBalance is optional for new users
+    const db = getDb(); // Get DB inside the function
+    if (!db) {
+        return res.status(500).json({ message: 'Database not initialized.' });
+    }
+
+    const { username, password, initialBalance } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ message: 'Please provide username and password.' });
     }
 
+    const hashedPassword = password; // Hashing would go here in a real app (e.g., using bcryptjs)
+
     db.run(
-        `INSERT INTO users (username, password, balance) VALUES (?, ?, ?)`,
-        [username, password, initialBalance || 0], // In a real app, hash the password!
+        `INSERT INTO users (username, password, balance, loanAmount) VALUES (?, ?, ?, ?)`,
+        [username, hashedPassword, initialBalance || 0, 0],
         function(err) {
             if (err) {
                 if (err.message.includes('SQLITE_CONSTRAINT')) {
@@ -36,6 +42,11 @@ const registerUser = (req, res) => {
 // @route   POST /users/loan
 // @access  Public
 const takeLoan = (req, res) => {
+    const db = getDb(); // Get DB inside the function
+    if (!db) {
+        return res.status(500).json({ message: 'Database not initialized.' });
+    }
+
     const { userId, amount } = req.body;
 
     if (!userId || amount === undefined || amount <= 0) {
